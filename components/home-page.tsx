@@ -6,6 +6,8 @@ import { FaVolumeUp } from "react-icons/fa";
 import { PiLinkBold } from "react-icons/pi";
 import { TbFileUpload } from "react-icons/tb";
 import { Text } from "./retroui/Text";
+import useTranslate from "@/hooks/useTranslate";
+import NoSSR from "@/components/NOSSR";
 import {
   Check,
   Copy,
@@ -21,6 +23,10 @@ const HomePage = () => {
   const [selectedLanguage, setSelectLanguage] = useState<string>("Spanish");
   const [copied, setCopied] = useState(false);
   const [favorite, setFavorite] = useState(false);
+  const targetText = useTranslate(
+    sourceText as string,
+    selectedLanguage as string
+  );
 
   const [languages] = useState<string[]>([
     "English",
@@ -42,7 +48,7 @@ const HomePage = () => {
   };
 
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(sourceText);
+    navigator.clipboard.writeText(targetText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -89,6 +95,12 @@ const HomePage = () => {
     const utterance = new SpeechSynthesisUtterance(sourceText);
     window.speechSynthesis.speak(utterance);
   };
+  const handleTargetAudioPlayback = () => {
+    if (targetText) {
+      const utterance = new SpeechSynthesisUtterance(targetText);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   return (
     <div className="min-h-screen mt-[4rem] md:p-4 p-8">
@@ -112,7 +124,10 @@ const HomePage = () => {
           />
           <div className="flex flex-row justify-between bottom-0 absolute p-4">
             <span className="cursor-pointer flex items-center space-x-4">
-              <SpeachRecognitionComponent setSourceText={setSourceText} />
+              <NoSSR>
+                <SpeachRecognitionComponent setSourceText={setSourceText} />
+              </NoSSR>
+
               <FaVolumeUp size={20} onClick={handleAudioPlayback} />
               <input
                 type="file"
@@ -122,21 +137,24 @@ const HomePage = () => {
                 ref={fileInputRef}
               />
               <TbFileUpload size={20} onClick={handleFileUploadClick} />
-              <label htmlFor="link-paste-input">
+              <label htmlFor="link-paste-input" className="cursor-pointer">
                 <PiLinkBold size={20} />
+                <input
+                  id="link-paste-input"
+                  type="url"
+                  className="hidden"
+                  onChange={handleLinkPaste}
+                />
               </label>
-              <input id="link-paste-input" type="url" className="hidden" onChange={handleLinkPaste} />
             </span>
           </div>
         </div>
         <div className="relative z-10 flex flex-col">
           <TextArea
             id="source-language"
-            value={sourceText}
+            value={targetText}
             placeholder="output language"
-            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-              setSourceText(e.target.value)
-            }
+            onChange={() => {}}
           />
           <div className="bottom-0 absolute p-4 w-full">
             <div className="flex justify-between items-center">
@@ -161,7 +179,7 @@ const HomePage = () => {
                 </span>
                 <FaVolumeUp
                   size={20}
-                  onClick={handleAudioPlayback}
+                  onClick={handleTargetAudioPlayback}
                   className="w-full"
                 />
               </div>
@@ -173,15 +191,6 @@ const HomePage = () => {
                 ) : (
                   <Copy size={16} onClick={handleCopyToClipboard} />
                 )}
-                <ThumbsUp size={16} />
-                <ThumbsDown size={16} />
-                <button>
-                  {favorite ? (
-                    <Star size={18} onClick={handleFavorite} fill="black" />
-                  ) : (
-                    <Star size={18} onClick={handleFavorite} />
-                  )}
-                </button>
               </div>
             </div>
           </div>
