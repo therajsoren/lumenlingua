@@ -1,13 +1,10 @@
 "use client";
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import TextArea from "@/components/Inputs/text-area";
 import SpeachRecognitionComponent from "@/components/Speech-recognition/page";
 import { FaVolumeUp } from "react-icons/fa";
-import { PiLinkBold } from "react-icons/pi";
-import { TbFileUpload } from "react-icons/tb";
-import { Text } from "./retroui/Text";
+
 import useTranslate from "@/hooks/useTranslate";
-import NoSSR from "@/components/NOSSR";
 import {
   Check,
   Copy,
@@ -19,17 +16,17 @@ import {
 
 const HomePage = () => {
   const [sourceText, setSourceText] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedLanguage, setSelectLanguage] = useState<string>("Spanish");
   const [copied, setCopied] = useState(false);
-  const [favorite, setFavorite] = useState(false);
-  const targetText = useTranslate(
+
+  const { targetText, isLoading, error } = useTranslate(
     sourceText as string,
     selectedLanguage as string
   );
 
   const [languages] = useState<string[]>([
     "English",
+    "Hindi",
     "Spanish",
     "French",
     "German",
@@ -38,33 +35,12 @@ const HomePage = () => {
     "Korean",
   ]);
 
-  const handleFavorite = () => {
-    setFavorite(!favorite);
-    if (!favorite) {
-      localStorage.setItem("favorite", JSON.stringify(sourceText));
-    } else {
-      localStorage.removeItem("favorite");
-    }
-  };
 
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(targetText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleLinkPaste = async (e: ChangeEvent<HTMLInputElement>) => {
-    const link = e.target.value;
-    try {
-      if (link) {
-        const response = await fetch(link);
-        const data = await response.text();
-        setSourceText(data);
-      } else {
-        setSourceText("");
-      }
-    } catch (error) {
-      console.error("Error Fetching link content", error);
+    if (targetText) {
+      navigator.clipboard.writeText(targetText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -75,21 +51,6 @@ const HomePage = () => {
     );
     rtfContent = rtfContent.replace(/\\par[d]?/g, "\n");
     return rtfContent.trim();
-  };
-  const fileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const rtfContent = reader.result as string;
-        const text = rtfToText(rtfContent);
-        setSourceText(text);
-      };
-      reader.readAsText(file);
-    }
-  };
-  const handleFileUploadClick = () => {
-    fileInputRef.current?.click();
   };
   const handleAudioPlayback = () => {
     const utterance = new SpeechSynthesisUtterance(sourceText);
@@ -105,15 +66,17 @@ const HomePage = () => {
   return (
     <div className="min-h-screen mt-[4rem] md:p-4 p-8">
       <div className="flex items-center justify-center flex-col space-y-4">
-        <Text as="h1">
-          Lingua
-          <span className="text-orange-600/90 tracking-tighter">Speak</span>
-        </Text>
-        <Text as="h4">LinguaSpeak: Bridging Voices, Connecting Worlds</Text>
+        <h1 className="text-6xl font-black">
+          Lumen
+          <span className="text-orange-600/90 tracking-tighter">Lingua</span>
+        </h1>
+        <h4 className="text-xl font-normal -tracking-wider">Shining a light on every language.</h4>
       </div>
 
       <div className="mt-[4rem] grid md:grid-cols-2 grid-cols-1 gap-4 max-w-5xl mx-auto">
-        <div className="relative z-10 flex flex-col">
+        <div className="relative z-10 flex flex-col"
+        style={{scrollbarWidth: "thin"}}
+        >
           <TextArea
             id="source-language"
             value={sourceText}
@@ -122,41 +85,34 @@ const HomePage = () => {
               setSourceText(e.target.value)
             }
           />
-          <div className="flex flex-row justify-between bottom-0 absolute p-4">
+          <div className="flex flex-row justify-between bottom-0 left-0 right-0 items-center absolute p-3 border-t-2">
             <span className="cursor-pointer flex items-center space-x-4">
-              <NoSSR>
                 <SpeachRecognitionComponent setSourceText={setSourceText} />
-              </NoSSR>
-
               <FaVolumeUp size={20} onClick={handleAudioPlayback} />
-              <input
-                type="file"
-                className="hidden"
-                accept=".txt,.rtf,.json,"
-                onChange={fileUpload}
-                ref={fileInputRef}
-              />
-              <TbFileUpload size={20} onClick={handleFileUploadClick} />
-              <label htmlFor="link-paste-input" className="cursor-pointer">
-                <PiLinkBold size={20} />
-                <input
-                  id="link-paste-input"
-                  type="url"
-                  className="hidden"
-                  onChange={handleLinkPaste}
-                />
-              </label>
             </span>
+          </div>
+          <div className="absolute bottom-2 right-4 text-sm text-gray-500">
+            {sourceText.length} / 2000
           </div>
         </div>
         <div className="relative z-10 flex flex-col">
           <TextArea
             id="source-language"
             value={targetText}
-            placeholder="output language"
-            onChange={() => {}}
+            placeholder={isLoading ? "Translating..." : error ? "Translation failed" : "output language"}
+            onChange={() => { }}
           />
-          <div className="bottom-0 absolute p-4 w-full">
+          {isLoading && (
+            <div className="absolute top-2 right-2 text-sm text-red-500">
+              Translating...
+            </div>
+          )}
+          {error && (
+            <div className="absolute top-2 right-2 text-sm text-red-500">
+              Error: {error}
+            </div>
+          )}
+          <div className="bottom-0 absolute p-3 left-0 right-0 pr-4 border-t-2 w-full">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4 pl-2 cursor-pointer">
                 <span className="flex items-center justify-between bg-slate-950/80 h-full w-full text-white rounded-full p-0.5 cursor-pointer">
@@ -196,6 +152,7 @@ const HomePage = () => {
           </div>
         </div>
       </div>
+
     </div>
   );
 };

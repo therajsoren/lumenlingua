@@ -1,29 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+  
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
 
 export async function POST(request: NextRequest) {
   try {
     const { sourceText, selectedLanguage } = await request.json();
-    console.log("Request received:", { sourceText, selectedLanguage });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `Translate the following text to ${selectedLanguage}. Only return the translated text, nothing else:
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
-    
+Text: "${sourceText}"
 
-    const prompt = `You will be provided with a sentence. This sentence: "${sourceText}". Your tasks are to:
-          - Detect what language the sentence is in
-          - Translate the sentence into ${selectedLanguage}
-          Do not return anything other than the translated sentence.`;
-
+Translation:`;
     const result = await model.generateContent(prompt);
     const response = result.response;
     const data = response.text();
 
-    return NextResponse.json({ data }, { status: 200 });
+    return NextResponse.json({ data: data.trim() }, { status: 200 });
   } catch (error: any) {
-    console.error("Error in translation", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error in translation:", error);
+  
+    if (error.message?.includes("API_KEY_INVALID")) {
+      return NextResponse.json(
+        { error: "Invalid API key. Please check your GEMINI_API_KEY" },
+        { status: 401 }
+      );
+    }
+    
+    if (error.message?.includes("QUOTA_EXCEEDED")) {
+      return NextResponse.json(
+        { error: "API quota exceeded. Please try again later" },
+        { status: 429 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: error.message || "Translation failed" },
+      { status: 500 }
+    );
   }
 }
