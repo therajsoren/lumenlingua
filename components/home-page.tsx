@@ -9,9 +9,6 @@ import {
   Check,
   Copy,
   LanguagesIcon,
-  Star,
-  ThumbsDown,
-  ThumbsUp,
 } from "lucide-react";
 
 const HomePage = () => {
@@ -44,14 +41,6 @@ const HomePage = () => {
     }
   };
 
-  const rtfToText = (rtfContent: string) => {
-    rtfContent = rtfContent.replace(
-      /\{\\*?[^{}]+}|[{}]|\\\\\\n?[A-Za-z]+\\n?(?:-?\d+)??/g,
-      ""
-    );
-    rtfContent = rtfContent.replace(/\\par[d]?/g, "\n");
-    return rtfContent.trim();
-  };
   const handleAudioPlayback = () => {
     const utterance = new SpeechSynthesisUtterance(sourceText);
     window.speechSynthesis.speak(utterance);
